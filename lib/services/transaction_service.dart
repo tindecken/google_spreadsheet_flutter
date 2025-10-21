@@ -73,4 +73,25 @@ class TransactionService {
       return Last5TransactionsResponse(success: false, message: 'Error: $e');
     }
   }
+
+  static Future<UndoTransactionResponse> undoTransaction() async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/undoTransaction'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        return UndoTransactionResponse.fromJson(jsonResponse);
+      } else {
+        return UndoTransactionResponse(
+          success: false,
+          message: 'Failed to undo transaction: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      return UndoTransactionResponse(success: false, message: 'Error: $e');
+    }
+  }
 }

@@ -162,3 +162,20 @@ class Transaction {
     );
   }
 }
+
+class UndoTransactionResponse {
+  final bool success;
+  final String message;
+
+  UndoTransactionResponse({
+    required this.success,
+    required this.message,
+  });
+
+  factory UndoTransactionResponse.fromJson(Map<String, dynamic> json) {
+    return UndoTransactionResponse(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+    );
+  }
+}

@@ -3,7 +3,9 @@ import 'services/transaction_service.dart';
 import 'models/add_transaction.dart';
 
 class TransactionsSection extends StatefulWidget {
-  const TransactionsSection({super.key});
+  final Function(String) onPerDayUpdate;
+
+  const TransactionsSection({super.key, required this.onPerDayUpdate});
 
   @override
   State<TransactionsSection> createState() => _TransactionsSectionState();
@@ -12,6 +14,7 @@ class TransactionsSection extends StatefulWidget {
 class _TransactionsSectionState extends State<TransactionsSection> {
   List<Transaction> _transactions = [];
   bool _isLoading = true;
+  bool _isUndoing = false;
   String _errorMessage = '';
 
   @override
@@ -135,7 +138,72 @@ class _TransactionsSectionState extends State<TransactionsSection> {
             },
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isUndoing ? null : _handleUndo,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: _isUndoing
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Undo last transaction'),
+            ),
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _handleUndo() async {
+    setState(() {
+      _isUndoing = true;
+    });
+
+    final response = await TransactionService.undoTransaction();
+
+    setState(() {
+      _isUndoing = false;
+    });
+
+    if (!mounted) return;
+
+    if (response.success) {
+      // Reload transactions
+      await _loadTransactions();
+
+      // Update perDay in AppBar
+      final perDayResponse = await TransactionService.getPerDay();
+      if (perDayResponse.success && perDayResponse.data != null) {
+        widget.onPerDayUpdate(perDayResponse.data!.perDay);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.message),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.message),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 }
