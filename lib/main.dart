@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'add_section.dart';
+import 'transactions_section.dart';
+import 'services/transaction_service.dart';
 
 void main() {
   runApp(const MainApp());
@@ -28,18 +31,44 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  String _perDay = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPerDay();
+  }
+
+  Future<void> _loadPerDay() async {
+    final response = await TransactionService.getPerDay();
+    if (response.success && response.data != null) {
+      setState(() {
+        _perDay = response.data!.perDay;
+      });
+    } else {
+      setState(() {
+        _perDay = 'Error';
+      });
+    }
+  }
+
+  void _updatePerDay(String newPerDay) {
+    setState(() {
+      _perDay = newPerDay;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('App Title'),
+        title: Text("Per day: ${_perDay}"),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
       body: _currentIndex == 0
-          ? const Center(child: Text('Add Section'))
-          : const Center(child: Text('Transactions Section')),
+          ? AddSection(onPerDayUpdate: _updatePerDay)
+          : const TransactionsSection(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -48,10 +77,7 @@ class _HomePageState extends State<HomePage> {
           });
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Add'),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
             label: 'Transactions',
